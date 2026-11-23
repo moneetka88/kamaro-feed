@@ -1,0 +1,24 @@
+name: kamaro-feed
+on:
+  schedule:
+    - cron: "20 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 convert.py
+        env:
+          KAMARO_TOKEN: ${{ secrets.KAMARO_TOKEN }}
+      - name: publish
+        run: |
+          cd out
+          git init -q -b feed
+          git config user.name kamaro-bot
+          git config user.email kamaro-bot@users.noreply.github.com
+          git add kamaro-stock.xml
+          git commit -qm "feed $(date -u +%FT%TZ)"
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" feed
