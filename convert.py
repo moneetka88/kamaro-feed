@@ -15,6 +15,7 @@ def items(url):
                 el.clear()
 skup = {}
 det = []
+csv = ["sku;manufacturer;image"]
 for el in items(LISTING):
     i = (el.findtext(G + "id") or "").strip()
     m = re.search(r"-skup(\d+)\.php", el.findtext(G + "link") or "")
@@ -30,6 +31,7 @@ for el in items(LISTING):
         if img:
             p += "<IMAGES><IMAGE><URL>%s</URL><MAIN_YES>1</MAIN_YES><LIST_YES>1</LIST_YES></IMAGE></IMAGES>" % escape(img)
         det.append(p + "</PRODUCT>")
+        csv.append("N111_%s_%s;%s;%s" % (i, m.group(1), br.replace(";", ","), img.replace(";", "%3B")))
 print("listing:", len(skup))
 if len(skup) < 1000:
     sys.exit("listing feed too small")
@@ -53,3 +55,5 @@ with open("out/kamaro-stock.xml", "w", encoding="utf-8") as f:
     f.write("\n".join(out))
 with open("out/kamaro-detail.xml", "w", encoding="utf-8") as f:
     f.write("\n".join(['<?xml version="1.0" encoding="UTF-8"?>', '<PRODUCTS version="2.0.0">'] + det + ["</PRODUCTS>"]))
+with open("out/kamaro-base.csv", "w", encoding="utf-8") as f:
+    f.write("\n".join(csv))
