@@ -1,4 +1,4 @@
-# Prevod skladu KAMARO do Upgates XML (kody N111_<id>_<skupina>)
+# Prevod skladu KAMARO do Upgates XML (kody N111_<id>_<skupina>), rezerva 2 ks
 import os, re, sys, urllib.request
 import xml.etree.ElementTree as ET
 
@@ -6,6 +6,7 @@ T = os.environ["KAMARO_TOKEN"]
 LISTING = "http://kamaro.blaznidohracek.cz/google/%s.xml" % T
 AVA = "http://kamaro.blaznidohracek.cz/googleAva/%s.xml" % T
 G = "{http://base.google.com/ns/1.0}"
+RESERVE = 2
 
 
 def items(url):
@@ -35,7 +36,7 @@ for el in items(AVA):
     q = (el.findtext(G + "inStock") or "0").strip()
     if not q.lstrip("-").isdigit():
         q = "0"
-    out.append("<PRODUCT><CODE>N111_%s_%s</CODE><STOCK>%s</STOCK></PRODUCT>" % (i, skup[i], max(int(q), 0)))
+    out.append("<PRODUCT><CODE>N111_%s_%s</CODE><STOCK>%s</STOCK></PRODUCT>" % (i, skup[i], max(int(q) - RESERVE, 0)))
     n += 1
 out.append("</PRODUCTS>")
 print("output:", n)
