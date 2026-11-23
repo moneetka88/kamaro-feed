@@ -1,7 +1,7 @@
 name: kamaro-feed
 on:
   schedule:
-    - cron: "20 * * * *"→ Runs at 20 minutes past the hour
+    - cron: "20 * * * *"
   workflow_dispatch:
 permissions:
   contents: write
