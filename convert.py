@@ -6,6 +6,7 @@ T = os.environ["KAMARO_TOKEN"]
 LISTING = "http://kamaro.blaznidohracek.cz/google/%s.xml" % T
 AVA = "http://kamaro.blaznidohracek.cz/googleAva/%s.xml" % T
 G = "{http://base.google.com/ns/1.0}"
+K = G
 RESERVE = 2
 def items(url):
     with urllib.request.urlopen(url, timeout=300) as r:
@@ -15,7 +16,7 @@ def items(url):
                 el.clear()
 skup = {}
 det = []
-csv = ["sku;manufacturer;image"]
+csv = ["sku;manufacturer;image;image2;image3;image4;image5;vek;mpn;pohlavi"]
 for el in items(LISTING):
     i = (el.findtext(G + "id") or "").strip()
     m = re.search(r"-skup(\d+)\.php", el.findtext(G + "link") or "")
@@ -31,7 +32,10 @@ for el in items(LISTING):
         if img:
             p += "<IMAGES><IMAGE><URL>%s</URL><MAIN_YES>1</MAIN_YES><LIST_YES>1</LIST_YES></IMAGE></IMAGES>" % escape(img)
         det.append(p + "</PRODUCT>")
-        csv.append("N111_%s_%s;%s;%s" % (i, m.group(1), br.replace(";", ","), img.replace(";", "%3B")))
+        extra = [(x.text or "").strip().replace(";", "%3B") for x in el.findall(G + "additional_image_link")][:4]
+        extra += [""] * (4 - len(extra))
+        cl = lambda t: (t or "").strip().replace(";", ",")
+        csv.append(";".join(["N111_%s_%s" % (i, m.group(1)), cl(br), img.replace(";", "%3B")] + extra + [cl(el.findtext(K + "vek")), cl(el.findtext(G + "mpn")), cl(el.findtext(G + "gender"))]))
 print("listing:", len(skup))
 if len(skup) < 1000:
     sys.exit("listing feed too small")
