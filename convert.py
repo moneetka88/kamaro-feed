@@ -39,19 +39,32 @@ for el in items(LISTING):
 print("listing:", len(skup))
 if len(skup) < 1000:
     sys.exit("listing feed too small")
-out = ['<?xml version="1.0" encoding="UTF-8"?>', '<PRODUCTS version="2.0.0">']
-n = 0
+ava = {}
 for el in items(AVA):
     i = (el.findtext(G + "id") or "").strip()
-    if i not in skup:
-        continue
     q = (el.findtext(G + "inStock") or "0").strip()
-    if not q.lstrip("-").isdigit():
-        q = "0"
-    out.append("<PRODUCT><CODE>N111_%s_%s</CODE><STOCK>%s</STOCK></PRODUCT>" % (i, skup[i], max(int(q) - RESERVE, 0)))
+    sh = (el.findtext(G + "show") or "1").strip()
+    ava[i] = (int(q) if q.lstrip("-").isdigit() else 0, sh != "0")
+codes = {"N111_%s_%s" % (i, k) for i, k in skup.items()}
+if os.path.exists("codes_seed.txt"):
+    codes |= {c.strip() for c in open("codes_seed.txt", encoding="utf-8") if c.strip().startswith("N111_")}
+try:
+    with urllib.request.urlopen("https://raw.githubusercontent.com/moneetka88/kamaro-feed/feed/codes_known.txt", timeout=60) as r:
+        codes |= {c.strip() for c in r.read().decode("utf-8").split() if c.startswith("N111_")}
+except Exception as e:
+    print("no known codes:", e)
+out = ['<?xml version="1.0" encoding="UTF-8"?>', '<PRODUCTS version="2.0.0">']
+n = zero = 0
+for c in sorted(codes):
+    i, k = c[5:].rsplit("_", 1)
+    q, shown = ava.get(i, (0, False))
+    st = max(q - RESERVE, 0) if (shown and skup.get(i) == k) else 0
+    if st == 0:
+        zero += 1
+    out.append("<PRODUCT><CODE>%s</CODE><STOCK>%s</STOCK></PRODUCT>" % (c, st))
     n += 1
 out.append("</PRODUCTS>")
-print("output:", n)
+print("output:", n, "zero:", zero)
 if n < 1000:
     sys.exit("output too small")
 os.makedirs("out", exist_ok=True)
@@ -61,3 +74,5 @@ with open("out/kamaro-detail.xml", "w", encoding="utf-8") as f:
     f.write("\n".join(['<?xml version="1.0" encoding="UTF-8"?>', '<PRODUCTS version="2.0.0">'] + det + ["</PRODUCTS>"]))
 with open("out/kamaro-base.csv", "w", encoding="utf-8") as f:
     f.write("\n".join(csv))
+with open("out/codes_known.txt", "w", encoding="utf-8") as f:
+    f.write("\n".join(sorted(codes)))
